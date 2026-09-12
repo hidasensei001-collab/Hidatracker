@@ -136,7 +136,7 @@
     }
 
     #sec-meal .glass-card {
-      padding: 14px 8px; /* Padding lebih ramping khusus tab makan */
+      padding: 14px 8px;
     }
 
     label { font-size: 11px; font-weight: 700; color: var(--text-sub); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -322,7 +322,7 @@
 
     .calendar-grid {
       display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr)); /* Mengunci 7 kolom agar 100% pas di layar hp */
+      grid-template-columns: repeat(7, minmax(0, 1fr));
       gap: 4px;
       margin-top: 8px;
       width: 100%;
@@ -666,9 +666,9 @@
     <div id="sec-settings" class="glass-card" style="display:none;">
       <h3 style="margin-bottom: 14px; font-size: 15px;"><i class="fa-solid fa-sliders"></i> Pengaturan Aplikasi</h3>
       
-      <label>URL Firebase Realtime Database (Opsional untuk Sync Realtime)</label>
+      <label>URL Firebase Realtime Database (Global Default Active)</label>
       <input type="text" id="firebaseUrlInput" placeholder="https://database-kamu-default-rtdb.firebaseio.com/">
-      <button class="btn-submit" onclick="saveFirebaseUrl()" style="margin-bottom: 16px;">Simpan Database URL</button>
+      <button class="btn-submit" onclick="saveFirebaseUrl()" style="margin-bottom: 16px;">Simpan Database URL Custom</button>
 
       <label>Ubah Password Akses</label>
       <input type="password" id="newPassInput" placeholder="Password baru...">
@@ -685,7 +685,8 @@
   <script>
     const DEFAULT_PASS = "maubuka";
     const MEAL_RATE_PER_DAY = 30000;
-    let firebaseDbUrl = localStorage.getItem('hida_tracker_firebase_url') || "";
+    const DEFAULT_FIREBASE_URL = "https://master-prompt-db-default-rtdb.firebaseio.com/";
+    let firebaseDbUrl = localStorage.getItem('hida_tracker_firebase_url') || DEFAULT_FIREBASE_URL;
     
     // Application State
     let trackerData = {
@@ -693,7 +694,7 @@
       mealLogs: {}      // Object of { "YYYY-MM-DD": true/false }
     };
 
-    let selectedMealMonth = getCurrentMonthKey(); // e.g., "2026-09"
+    let selectedMealMonth = getCurrentMonthKey();
 
     // Initialize Date picker with Today's Date YYYY-MM-DD
     function setTodayDateInput() {
@@ -737,29 +738,38 @@
     // App Initialization
     async function initApp() {
       setTodayDateInput();
-      if (firebaseDbUrl) {
-        document.getElementById('firebaseUrlInput').value = firebaseDbUrl;
-      }
+      document.getElementById('firebaseUrlInput').value = firebaseDbUrl;
       await loadData();
       renderAllViews();
     }
 
-    // Load Data (Firebase / LocalStorage)
-    async function loadData() {
-      if (firebaseDbUrl) {
-        try {
-          const res = await fetch(`${firebaseDbUrl.replace(/\/$/, '')}/hida_tracker.json`);
-          const data = await res.json();
-          if (data) {
+    // Auto Polling Real-time Background Sync (Setiap 5 detik)
+    setInterval(async () => {
+      if (document.getElementById('mainApp').style.display !== 'none') {
+        await loadData(true);
+      }
+    }, 5000);
+
+    // Load Data (Firebase Cloud Database)
+    async function loadData(silent = false) {
+      if (!firebaseDbUrl) return;
+      try {
+        const res = await fetch(`${firebaseDbUrl.replace(/\/$/, '')}/hida_tracker.json`);
+        const data = await res.json();
+        if (data) {
+          const prevStr = JSON.stringify(trackerData);
+          const newStr = JSON.stringify(data);
+          
+          if (prevStr !== newStr) {
             trackerData = data;
             if (!trackerData.transactions) trackerData.transactions = [];
             if (!trackerData.mealLogs) trackerData.mealLogs = {};
+            localStorage.setItem('hida_tracker_data', newStr);
+            renderAllViews();
           }
-        } catch(e) {
-          console.error("Firebase fetch error, loading local", e);
-          loadLocal();
         }
-      } else {
+      } catch(e) {
+        if (!silent) console.error("Firebase fetch error, fallback local", e);
         loadLocal();
       }
     }
@@ -824,7 +834,7 @@
       }
 
       const total = qty * price;
-      const monthKey = dateVal.substring(0, 7); // "YYYY-MM"
+      const monthKey = dateVal.substring(0, 7);
 
       const newItem = {
         id: Date.now(),
@@ -847,7 +857,7 @@
       document.getElementById('inputQty').value = '1';
       calcSubtotal();
 
-      showToast("✅ Transaksi berhasil dicatat!");
+      showToast("✅ Transaksi berhasil dicatat ke Cloud!");
       renderAllViews();
     }
 
@@ -978,7 +988,6 @@
       const setMonths = new Set();
       setMonths.add(getCurrentMonthKey());
 
-      // Add all months present in mealLogs
       if (trackerData.mealLogs) {
         Object.keys(trackerData.mealLogs).forEach(dateStr => {
           if (dateStr.length >= 7) setMonths.add(dateStr.substring(0, 7));
@@ -1042,7 +1051,6 @@
 
       document.getElementById('mealMonthLbl').innerText = `Bulan: ${monthNames[mm-1]} ${yyyy}`;
 
-      // Day Names Header (Minggu to Sabtu)
       const dayHeaders = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
       dayHeaders.forEach(dh => {
         const hDiv = document.createElement('div');
@@ -1051,11 +1059,9 @@
         grid.appendChild(hDiv);
       });
 
-      // Calculate Days in Month & First Day Index
       const daysInMonth = new Date(yyyy, mm, 0).getDate();
-      const firstDayIdx = new Date(yyyy, mm - 1, 1).getDay(); // 0 = Sun, 1 = Mon ...
+      const firstDayIdx = new Date(yyyy, mm - 1, 1).getDay();
 
-      // Empty padding cells before Day 1
       for (let i = 0; i < firstDayIdx; i++) {
         const emptyCell = document.createElement('div');
         emptyCell.className = 'cal-day-cell empty';
@@ -1064,7 +1070,6 @@
 
       let activeDaysCount = 0;
 
-      // Populate Day Cells
       for (let day = 1; day <= daysInMonth; day++) {
         const dayStr = String(day).padStart(2, '0');
         const dateKey = `${yyyyStr}-${mmStr}-${dayStr}`;
@@ -1083,7 +1088,6 @@
         grid.appendChild(cell);
       }
 
-      // Update Summary Stat Cards
       const totalCost = activeDaysCount * MEAL_RATE_PER_DAY;
       document.getElementById('mealDaysCountVal').innerText = `${activeDaysCount} Hari`;
       document.getElementById('mealTotalCostVal').innerText = formatRupiah(totalCost);
@@ -1094,10 +1098,7 @@
       const select = document.getElementById('selectMonthFilter');
       select.innerHTML = '';
 
-      // Extract unique months from transactions
       const monthsSet = new Set(trackerData.transactions.map(t => t.monthKey));
-      
-      // Always include current month
       monthsSet.add(getCurrentMonthKey());
 
       const sortedMonths = Array.from(monthsSet).sort().reverse();
@@ -1154,10 +1155,10 @@
     // SETTINGS & BACKUP
     function saveFirebaseUrl() {
       const url = document.getElementById('firebaseUrlInput').value.trim();
-      firebaseDbUrl = url;
-      localStorage.setItem('hida_tracker_firebase_url', url);
-      showToast("💾 URL Firebase tersimpan!");
-      saveData();
+      firebaseDbUrl = url || DEFAULT_FIREBASE_URL;
+      localStorage.setItem('hida_tracker_firebase_url', firebaseDbUrl);
+      showToast("💾 URL Database tersimpan!");
+      loadData();
     }
 
     function changePassword() {
