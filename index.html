@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Hida Tracker - Catatan Keuangan & Transaksi</title>
+  
+  <!-- Google Fonts & FontAwesome Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --bg-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1920&auto=format&fit=crop');
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #10b981;
+      --accent-cyan: #06b6d4;
+      --danger: #ef4444;
+      --glass-bg: rgba(15, 23, 42, 0.8);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --glass-card: rgba(30, 41, 59, 0.75);
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    
+    body {
+      background: var(--bg-image) no-repeat center center fixed;
+      background-size: cover;
+      color: var(--text-main);
+      min-height: 100vh;
+      padding-bottom: 40px;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: -1;
+    }
+
+    /* LOCK SCREEN */
+    #lockScreen {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .lock-box {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      padding: 32px 24px;
+      border-radius: 24px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+
+    .lock-box i { font-size: 40px; color: var(--primary); margin-bottom: 16px; }
+    .lock-box h2 { font-size: 22px; margin-bottom: 8px; font-weight: 700; }
+    .lock-box p { font-size: 13px; color: var(--text-sub); margin-bottom: 20px; }
+
+    /* LAYOUT CONTAINER */
+    .container { max-width: 950px; margin: 0 auto; padding: 16px; }
+
+    /* NAVBAR */
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      padding: 14px 20px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; color: #fff; }
+    .brand i { color: var(--accent); }
+    .wita-clock { font-size: 12px; font-weight: 600; background: rgba(255,255,255,0.08); padding: 6px 14px; border-radius: 20px; color: #38bdf8; }
+
+    /* CONTROLS & TABS */
+    .controls-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .tab-btn {
+      background: var(--glass-card);
+      border: 1px solid var(--glass-border);
+      color: var(--text-sub);
+      padding: 12px 20px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn.active, .tab-btn:hover {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 18px rgba(99, 102, 241, 0.4);
+    }
+
+    /* GLASS CARDS & FORM */
+    .glass-card {
+      background: var(--glass-card);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    label { font-size: 12px; font-weight: 700; color: var(--text-sub); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    input[type="text"], input[type="number"], input[type="date"], input[type="password"], textarea, select {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid var(--glass-border);
+      color: #fff;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      margin-bottom: 14px;
+      outline: none;
+      transition: border 0.3s;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      cursor: pointer;
+    }
+
+    input:focus, textarea:focus, select:focus { border-color: var(--primary); }
+    textarea { resize: vertical; min-height: 80px; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary), var(--accent-cyan));
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-submit:active { transform: scale(0.98); }
+
+    /* DASHBOARD CARDS GRID */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--glass-card);
+      border: 1px solid var(--glass-border);
+      padding: 20px;
+      border-radius: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 4px; height: 100%;
+      background: var(--primary);
+    }
+
+    .stat-card.accent::after { background: var(--accent); }
+    .stat-card.cyan::after { background: var(--accent-cyan); }
+    .stat-card.amber::after { background: #f59e0b; }
+
+    .stat-val { font-size: 22px; font-weight: 800; color: #fff; margin: 6px 0; }
+    .stat-lbl { font-size: 11px; color: var(--text-sub); text-transform: uppercase; font-weight: 700; }
+    .stat-subtext { font-size: 11px; color: var(--accent); font-weight: 600; margin-top: 4px; }
+
+    /* DATA TABLE & LIST */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 14px;
+      border: 1px solid var(--glass-border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
+      background: rgba(15, 23, 42, 0.85);
+      color: var(--text-sub);
+      padding: 12px 14px;
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 700;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      color: var(--text-main);
+    }
+
+    tr:hover { background: rgba(255,255,255,0.03); }
+
+    .badge-qty {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    .price-tag { font-weight: 700; color: #10b981; }
+
+    .btn-action-sm {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-del-sm { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .btn-del-sm:hover { background: var(--danger); color: white; }
+
+    /* TOAST NOTIFICATION */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--primary);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      transition: transform 0.3s ease;
+      z-index: 100000;
+    }
+
+    #toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+  <!-- LOCK SCREEN -->
+  <div id="lockScreen">
+    <div class="lock-box">
+      <i class="fa-solid fa-wallet"></i>
+      <h2>Hida Tracker</h2>
+      <p>Masukkan password untuk mengakses pencatatan keuangan kamu.</p>
+      <input type="password" id="passInput" placeholder="Password akses..." onkeydown="if(event.key==='Enter') unlockApp()">
+      <button class="btn-submit" onclick="unlockApp()">Buka Akses <i class="fa-solid fa-key"></i></button>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="container" id="mainApp" style="display:none;">
+
+    <!-- NAVBAR -->
+    <div class="nav-bar">
+      <div class="brand">
+        <i class="fa-solid fa-chart-line"></i> Hida Tracker
+      </div>
+      <div class="wita-clock" id="clockWITA">WITA: --:--:--</div>
+    </div>
+
+    <!-- TAB NAVIGATION -->
+    <div class="controls-row">
+      <button class="tab-btn active" onclick="switchTab('dashboard')"><i class="fa-solid fa-house"></i> Dashboard</button>
+      <button class="tab-btn" onclick="switchTab('input')"><i class="fa-solid fa-pen-to-square"></i> Input Transaksi</button>
+      <button class="tab-btn" onclick="switchTab('history')"><i class="fa-solid fa-calendar-days"></i> Rekap Bulan Lain</button>
+      <button class="tab-btn" onclick="switchTab('settings')"><i class="fa-solid fa-sliders"></i> Pengaturan</button>
+      <button class="tab-btn" onclick="lockApp()"><i class="fa-solid fa-lock"></i> Kunci</button>
+    </div>
+
+    <!-- SECTION 1: DASHBOARD -->
+    <div id="sec-dashboard">
+      <!-- STAT CARDS -->
+      <div class="stat-grid">
+        <div class="stat-card accent">
+          <div class="stat-lbl">Pengeluaran Bulan Ini</div>
+          <div class="stat-val" id="dashTotalMonth">Rp 0</div>
+          <div class="stat-subtext" id="dashCurrentMonthLbl">Bulan Berjalan</div>
+        </div>
+
+        <div class="stat-card cyan">
+          <div class="stat-lbl">Total Transaksi (Bulan Ini)</div>
+          <div class="stat-val" id="dashCountMonth">0 Item</div>
+          <div class="stat-subtext">Catatan Belanja</div>
+        </div>
+
+        <div class="stat-card amber">
+          <div class="stat-lbl">Rata-Rata Harian</div>
+          <div class="stat-val" id="dashAvgDaily">Rp 0</div>
+          <div class="stat-subtext">Estimasi Pengeluaran / Hari</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-lbl">Barang Terbanyak</div>
+          <div class="stat-val" style="font-size: 16px; min-height: 26px;" id="dashTopItem">-</div>
+          <div class="stat-subtext" id="dashTopItemSub">Item Paling Sering Dibeli</div>
+        </div>
+      </div>
+
+      <!-- RECENT TRANSACTIONS PREVIEW -->
+      <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h3 style="font-size: 16px;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-cyan);"></i> Transaksi Terakhir</h3>
+          <button onclick="switchTab('input')" style="background: none; border: none; color: var(--primary); font-weight: 700; cursor: pointer; font-size: 12px;">+ Tambah Baru</button>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Nama Barang</th>
+                <th>Jumlah</th>
+                <th>Harga Satuan</th>
+                <th>Total Harga</th>
+              </tr>
+            </thead>
+            <tbody id="dashRecentTableBody">
+              <!-- JS Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: INPUT TRANSAKSI & BULAN BERJALAN -->
+    <div id="sec-input" style="display:none;">
+      <!-- FORM INPUT -->
+      <div class="glass-card">
+        <h3 style="margin-bottom: 16px; font-size: 16px;"><i class="fa-solid fa-circle-plus" style="color: var(--accent);"></i> Form Input Transaksi</h3>
+        
+        <div class="form-grid">
+          <div>
+            <label>Tanggal Transaksi</label>
+            <input type="date" id="inputDate">
+          </div>
+          <div>
+            <label>Nama Barang / Transaksi</label>
+            <input type="text" id="inputName" placeholder="Misal: Bensin, Lele, Tempeh, Freon">
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div>
+            <label>Jumlah (Qty)</label>
+            <input type="number" id="inputQty" placeholder="1" min="1" value="1" oninput="calcSubtotal()">
+          </div>
+          <div>
+            <label>Harga Satuan (Rp)</label>
+            <input type="number" id="inputPrice" placeholder="Misal: 15000" oninput="calcSubtotal()">
+          </div>
+        </div>
+
+        <div>
+          <label>Catatan (Opsional)</label>
+          <textarea id="inputNotes" placeholder="Misal: Beli di warung langganan / Service kendaraan"></textarea>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.04); padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 13px; color: var(--text-sub); font-weight: 600;">Estimasi Subtotal:</span>
+          <span id="subtotalPreview" style="font-size: 16px; font-weight: 800; color: var(--accent);">Rp 0</span>
+        </div>
+
+        <button class="btn-submit" onclick="submitTransaction()"><i class="fa-solid fa-floppy-disk"></i> Simpan Transaksi</button>
+      </div>
+
+      <!-- TABEL BULAN BERJALAN -->
+      <div class="glass-card">
+        <h3 style="margin-bottom: 14px; font-size: 16px;" id="currentMonthTableTitle">
+          <i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Transaksi Bulan Berjalan
+        </h3>
+        
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Nama Barang</th>
+                <th>Jumlah</th>
+                <th>Total (Rp)</th>
+                <th>Catatan</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="currentMonthTableBody">
+              <!-- JS Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: REKAP BULAN LALU / LAINNYA -->
+    <div id="sec-history" style="display:none;">
+      <div class="glass-card">
+        <h3 style="margin-bottom: 16px; font-size: 16px;"><i class="fa-solid fa-filter" style="color: var(--accent-cyan);"></i> Pilih Bulan Rekap</h3>
+        
+        <label>Pilih Bulan & Tahun</label>
+        <select id="selectMonthFilter" onchange="renderHistoryMonth()">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+
+      <div class="glass-card" id="historyCardContainer">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+          <h3 style="font-size: 16px;" id="historyTitleLbl">Detail Rekap</h3>
+          <div style="font-size: 14px; font-weight: 800; color: var(--accent);" id="historyTotalVal">Total: Rp 0</div>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Nama Barang</th>
+                <th>Jumlah</th>
+                <th>Total (Rp)</th>
+                <th>Catatan</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <!-- JS Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4: SETTINGS & FIREBASE -->
+    <div id="sec-settings" class="glass-card" style="display:none;">
+      <h3 style="margin-bottom: 16px; font-size: 16px;"><i class="fa-solid fa-sliders"></i> Pengaturan Aplikasi</h3>
+      
+      <label>URL Firebase Realtime Database (Opsional untuk Sync Realtime)</label>
+      <input type="text" id="firebaseUrlInput" placeholder="https://database-kamu-default-rtdb.firebaseio.com/">
+      <button class="btn-submit" onclick="saveFirebaseUrl()" style="margin-bottom: 20px;">Simpan Database URL</button>
+
+      <label>Ubah Password Akses</label>
+      <input type="password" id="newPassInput" placeholder="Password baru...">
+      <button class="btn-submit" onclick="changePassword()" style="margin-bottom: 20px;">Perbarui Password</button>
+
+      <label>Backup Data JSON</label>
+      <button class="btn-submit" onclick="exportDataJSON()" style="background: var(--glass-card); border: 1px solid var(--glass-border); color: #fff;"><i class="fa-solid fa-download"></i> Export Data ke File JSON</button>
+    </div>
+
+  </div>
+
+  <div id="toast">Notifikasi</div>
+
+  <script>
+    const DEFAULT_PASS = "maubuka";
+    let firebaseDbUrl = localStorage.getItem('hida_tracker_firebase_url') || "";
+    
+    // Application State
+    let trackerData = {
+      transactions: [] // Array of { id, date, name, qty, price, total, notes, monthKey }
+    };
+
+    // Initialize Date picker with Today's Date YYYY-MM-DD
+    function setTodayDateInput() {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      document.getElementById('inputDate').value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    // Realtime Clock WITA (UTC+8)
+    function updateClock() {
+      const now = new Date();
+      const options = { timeZone: 'Asia/Makassar', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+      const timeStr = new Intl.DateTimeFormat('id-ID', options).format(now);
+      document.getElementById('clockWITA').innerText = `WITA: ${timeStr}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Lock System
+    function unlockApp() {
+      const input = document.getElementById('passInput').value;
+      const savedPass = localStorage.getItem('hida_tracker_pass') || DEFAULT_PASS;
+
+      if (input === savedPass) {
+        document.getElementById('lockScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        initApp();
+      } else {
+        alert('❌ Password Salah!');
+      }
+    }
+
+    function lockApp() {
+      document.getElementById('lockScreen').style.display = 'flex';
+      document.getElementById('mainApp').style.display = 'none';
+      document.getElementById('passInput').value = '';
+    }
+
+    // App Initialization
+    async function initApp() {
+      setTodayDateInput();
+      if (firebaseDbUrl) {
+        document.getElementById('firebaseUrlInput').value = firebaseDbUrl;
+      }
+      await loadData();
+      renderAllViews();
+    }
+
+    // Load Data (Firebase / LocalStorage)
+    async function loadData() {
+      if (firebaseDbUrl) {
+        try {
+          const res = await fetch(`${firebaseDbUrl.replace(/\/$/, '')}/hida_tracker.json`);
+          const data = await res.json();
+          if (data && data.transactions) {
+            trackerData = data;
+          }
+        } catch(e) {
+          console.error("Firebase fetch error, loading local", e);
+          loadLocal();
+        }
+      } else {
+        loadLocal();
+      }
+    }
+
+    function loadLocal() {
+      const local = localStorage.getItem('hida_tracker_data');
+      if (local) {
+        trackerData = JSON.parse(local);
+        if (!trackerData.transactions) trackerData.transactions = [];
+      }
+    }
+
+    async function saveData() {
+      localStorage.setItem('hida_tracker_data', JSON.stringify(trackerData));
+      if (firebaseDbUrl) {
+        try {
+          await fetch(`${firebaseDbUrl.replace(/\/$/, '')}/hida_tracker.json`, {
+            method: 'PUT',
+            body: JSON.stringify(trackerData),
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } catch(e) {
+          console.error("Firebase sync error", e);
+        }
+      }
+    }
+
+    // Switch Tabs
+    function switchTab(tab) {
+      ['dashboard', 'input', 'history', 'settings'].forEach(t => {
+        document.getElementById(`sec-${t}`).style.display = t === tab ? 'block' : 'none';
+      });
+      document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', ['dashboard', 'input', 'history', 'settings', 'lock'][idx] === tab);
+      });
+
+      if (tab === 'history') populateMonthDropdown();
+      renderAllViews();
+    }
+
+    // Calculate Subtotal Preview in Form
+    function calcSubtotal() {
+      const qty = parseFloat(document.getElementById('inputQty').value) || 0;
+      const price = parseFloat(document.getElementById('inputPrice').value) || 0;
+      const total = qty * price;
+      document.getElementById('subtotalPreview').innerText = formatRupiah(total);
+    }
+
+    // Submit New Transaction
+    async function submitTransaction() {
+      const dateVal = document.getElementById('inputDate').value;
+      const name = document.getElementById('inputName').value.trim();
+      const qty = parseInt(document.getElementById('inputQty').value) || 1;
+      const price = parseFloat(document.getElementById('inputPrice').value) || 0;
+      const notes = document.getElementById('inputNotes').value.trim();
+
+      if (!dateVal || !name || price <= 0) {
+        showToast("⚠️ Mohon isi tanggal, nama barang, dan harga yang valid!");
+        return;
+      }
+
+      const total = qty * price;
+      const monthKey = dateVal.substring(0, 7); // "YYYY-MM"
+
+      const newItem = {
+        id: Date.now(),
+        date: dateVal,
+        name,
+        qty,
+        price,
+        total,
+        notes,
+        monthKey
+      };
+
+      trackerData.transactions.unshift(newItem);
+      await saveData();
+
+      // Reset form
+      document.getElementById('inputName').value = '';
+      document.getElementById('inputPrice').value = '';
+      document.getElementById('inputNotes').value = '';
+      document.getElementById('inputQty').value = '1';
+      calcSubtotal();
+
+      showToast("✅ Transaksi berhasil dicatat!");
+      renderAllViews();
+    }
+
+    // Delete Item
+    async function deleteTransaction(id) {
+      if (confirm("Hapus catatan transaksi ini?")) {
+        trackerData.transactions = trackerData.transactions.filter(t => t.id !== id);
+        await saveData();
+        showToast("🗑️ Transaksi dihapus");
+        renderAllViews();
+      }
+    }
+
+    // Get Current Month Key "YYYY-MM"
+    function getCurrentMonthKey() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      return `${yyyy}-${mm}`;
+    }
+
+    // Render All App Views & Dashboard
+    function renderAllViews() {
+      renderDashboard();
+      renderCurrentMonthTable();
+      renderHistoryMonth();
+    }
+
+    // 1. RENDER DASHBOARD
+    function renderDashboard() {
+      const currentMonth = getCurrentMonthKey();
+      const monthTransactions = trackerData.transactions.filter(t => t.monthKey === currentMonth);
+
+      // Total Pengeluaran Bulan Ini
+      const totalMonth = monthTransactions.reduce((acc, t) => acc + t.total, 0);
+      document.getElementById('dashTotalMonth').innerText = formatRupiah(totalMonth);
+
+      // Title Month Name
+      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      const [yearStr, monthStr] = currentMonth.split('-');
+      const monthName = monthNames[parseInt(monthStr) - 1];
+      document.getElementById('dashCurrentMonthLbl').innerText = `Bulan: ${monthName} ${yearStr}`;
+      document.getElementById('currentMonthTableTitle').innerHTML = `<i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Transaksi Bulan Berjalan (${monthName} ${yearStr})`;
+
+      // Total Count
+      document.getElementById('dashCountMonth').innerText = `${monthTransactions.length} Item`;
+
+      // Average Daily (Bulan Ini)
+      const daysPassed = new Date().getDate();
+      const avgDaily = daysPassed > 0 ? Math.round(totalMonth / daysPassed) : totalMonth;
+      document.getElementById('dashAvgDaily').innerText = formatRupiah(avgDaily);
+
+      // Top Item
+      const itemCounts = {};
+      monthTransactions.forEach(t => {
+        itemCounts[t.name] = (itemCounts[t.name] || 0) + t.qty;
+      });
+
+      let topName = "-";
+      let maxQty = 0;
+      for (const [name, qty] of Object.entries(itemCounts)) {
+        if (qty > maxQty) {
+          maxQty = qty;
+          topName = name;
+        }
+      }
+      document.getElementById('dashTopItem').innerText = topName !== "-" ? topName : "Belum ada";
+      document.getElementById('dashTopItemSub').innerText = topName !== "-" ? `Dibeli ${maxQty}x bulan ini` : "Item Paling Sering Dibeli";
+
+      // Recent 5 Transactions Table
+      const recentTbody = document.getElementById('dashRecentTableBody');
+      recentTbody.innerHTML = '';
+      const recentList = trackerData.transactions.slice(0, 5);
+
+      if (recentList.length === 0) {
+        recentTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-sub);">Belum ada data transaksi.</td></tr>`;
+      } else {
+        recentList.forEach(t => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${formatDateDisplay(t.date)}</td>
+            <td><b>${escapeHtml(t.name)}</b></td>
+            <td><span class="badge-qty">${t.qty}x</span></td>
+            <td>${formatRupiah(t.price)}</td>
+            <td class="price-tag">${formatRupiah(t.total)}</td>
+          `;
+          recentTbody.appendChild(tr);
+        });
+      }
+    }
+
+    // 2. RENDER TABEL BULAN BERJALAN
+    function renderCurrentMonthTable() {
+      const currentMonth = getCurrentMonthKey();
+      const monthTransactions = trackerData.transactions.filter(t => t.monthKey === currentMonth);
+      const tbody = document.getElementById('currentMonthTableBody');
+      tbody.innerHTML = '';
+
+      if (monthTransactions.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: var(--text-sub); padding:20px;">Belum ada data transaksi di bulan berjalan ini.</td></tr>`;
+        return;
+      }
+
+      monthTransactions.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${formatDateDisplay(t.date)}</td>
+          <td><b>${escapeHtml(t.name)}</b></td>
+          <td><span class="badge-qty">${t.qty}</span></td>
+          <td class="price-tag">${formatRupiah(t.total)}</td>
+          <td style="font-size: 12px; color: var(--text-sub);">${escapeHtml(t.notes || '-')}</td>
+          <td>
+            <button class="btn-action-sm btn-del-sm" onclick="deleteTransaction(${t.id})"><i class="fa-solid fa-trash"></i> Hapus</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 3. REKAP BULAN LAINNYA & DROPDOWN
+    function populateMonthDropdown() {
+      const select = document.getElementById('selectMonthFilter');
+      select.innerHTML = '';
+
+      // Extract unique months from transactions
+      const monthsSet = new Set(trackerData.transactions.map(t => t.monthKey));
+      
+      // Always include current month
+      monthsSet.add(getCurrentMonthKey());
+
+      const sortedMonths = Array.from(monthsSet).sort().reverse();
+      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+      sortedMonths.forEach(mKey => {
+        const [yyyy, mm] = mKey.split('-');
+        const option = document.createElement('option');
+        option.value = mKey;
+        option.innerText = `${monthNames[parseInt(mm)-1]} ${yyyy}`;
+        select.appendChild(option);
+      });
+    }
+
+    function renderHistoryMonth() {
+      const selectedMonth = document.getElementById('selectMonthFilter').value || getCurrentMonthKey();
+      const monthTransactions = trackerData.transactions.filter(t => t.monthKey === selectedMonth);
+
+      const [yyyy, mm] = selectedMonth.split('-');
+      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      
+      document.getElementById('historyTitleLbl').innerText = `Rekap Transaksi: ${monthNames[parseInt(mm)-1]} ${yyyy}`;
+      
+      const total = monthTransactions.reduce((acc, t) => acc + t.total, 0);
+      document.getElementById('historyTotalVal').innerText = `Total: ${formatRupiah(total)}`;
+
+      const tbody = document.getElementById('historyTableBody');
+      tbody.innerHTML = '';
+
+      if (monthTransactions.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: var(--text-sub); padding:20px;">Tidak ada transaksi di bulan ini.</td></tr>`;
+        return;
+      }
+
+      monthTransactions.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${formatDateDisplay(t.date)}</td>
+          <td><b>${escapeHtml(t.name)}</b></td>
+          <td><span class="badge-qty">${t.qty}</span></td>
+          <td class="price-tag">${formatRupiah(t.total)}</td>
+          <td style="font-size: 12px; color: var(--text-sub);">${escapeHtml(t.notes || '-')}</td>
+          <td>
+            <button class="btn-action-sm btn-del-sm" onclick="deleteTransaction(${t.id})"><i class="fa-solid fa-trash"></i> Hapus</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // SETTINGS & BACKUP
+    function saveFirebaseUrl() {
+      const url = document.getElementById('firebaseUrlInput').value.trim();
+      firebaseDbUrl = url;
+      localStorage.setItem('hida_tracker_firebase_url', url);
+      showToast("💾 URL Firebase tersimpan!");
+      saveData();
+    }
+
+    function changePassword() {
+      const newP = document.getElementById('newPassInput').value.trim();
+      if (newP) {
+        localStorage.setItem('hida_tracker_pass', newP);
+        showToast("🔑 Password berhasil diperbarui!");
+        document.getElementById('newPassInput').value = '';
+      }
+    }
+
+    function exportDataJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(trackerData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `hida_tracker_backup_${getCurrentMonthKey()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast("📥 Export data berhasil!");
+    }
+
+    // UTILITIES & FORMATTERS
+    function formatRupiah(amount) {
+      return "Rp " + Math.round(amount).toLocaleString('id-ID');
+    }
+
+    function formatDateDisplay(dateStr) {
+      if (!dateStr) return '-';
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+      return dateStr;
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    function escapeHtml(text) {
+      return (text || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+  </script>
+</body>
+</html>
