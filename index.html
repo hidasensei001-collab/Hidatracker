@@ -274,6 +274,102 @@
     .btn-del-sm { background: rgba(239, 68, 68, 0.2); color: #f87171; }
     .btn-del-sm:hover { background: var(--danger); color: white; }
 
+    /* MEAL TRACKER CALENDAR STYLES */
+    .calendar-nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-nav-cal {
+      background: var(--glass-card);
+      border: 1px solid var(--glass-border);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-nav-cal:hover { background: var(--primary); }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .cal-header-cell {
+      text-align: center;
+      font-weight: 800;
+      font-size: 11px;
+      color: var(--accent-cyan);
+      padding: 8px 0;
+      text-transform: uppercase;
+    }
+
+    .cal-day-cell {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      min-height: 75px;
+      padding: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      user-select: none;
+    }
+
+    .cal-day-cell.empty {
+      background: transparent;
+      border: none;
+      cursor: default;
+    }
+
+    .cal-day-cell:not(.empty):hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .cal-day-cell.active {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1.5px solid #10b981;
+      box-shadow: 0 4px 18px rgba(16, 185, 129, 0.25);
+    }
+
+    .cal-day-number {
+      font-weight: 800;
+      font-size: 15px;
+      color: #fff;
+    }
+
+    .cal-day-cell.active .cal-day-number {
+      color: #10b981;
+    }
+
+    .cal-day-status {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 6px;
+      border-radius: 8px;
+      text-align: center;
+      background: rgba(255,255,255,0.06);
+      color: var(--text-sub);
+    }
+
+    .cal-day-cell.active .cal-day-status {
+      background: #10b981;
+      color: #fff;
+    }
+
     /* TOAST NOTIFICATION */
     #toast {
       position: fixed;
@@ -323,6 +419,7 @@
     <div class="controls-row">
       <button class="tab-btn active" onclick="switchTab('dashboard')"><i class="fa-solid fa-house"></i> Dashboard</button>
       <button class="tab-btn" onclick="switchTab('input')"><i class="fa-solid fa-pen-to-square"></i> Input Transaksi</button>
+      <button class="tab-btn" onclick="switchTab('meal')"><i class="fa-solid fa-utensils"></i> Catatan Makan</button>
       <button class="tab-btn" onclick="switchTab('history')"><i class="fa-solid fa-calendar-days"></i> Rekap Bulan Lain</button>
       <button class="tab-btn" onclick="switchTab('settings')"><i class="fa-solid fa-sliders"></i> Pengaturan</button>
       <button class="tab-btn" onclick="lockApp()"><i class="fa-solid fa-lock"></i> Kunci</button>
@@ -450,7 +547,56 @@
       </div>
     </div>
 
-    <!-- SECTION 3: REKAP BULAN LALU / LAINNYA -->
+    <!-- SECTION 3: PENCATATAN MAKAN (MEAL TRACKER) -->
+    <div id="sec-meal" style="display:none;">
+      <!-- STAT CARD MAKAN -->
+      <div class="stat-grid">
+        <div class="stat-card accent">
+          <div class="stat-lbl">Total Biaya Makan</div>
+          <div class="stat-val" id="mealTotalCostVal">Rp 0</div>
+          <div class="stat-subtext" id="mealMonthLbl">Bulan Berjalan</div>
+        </div>
+
+        <div class="stat-card cyan">
+          <div class="stat-lbl">Jumlah Hari Makan</div>
+          <div class="stat-val" id="mealDaysCountVal">0 Hari</div>
+          <div class="stat-subtext">Sudah Terisi</div>
+        </div>
+
+        <div class="stat-card amber">
+          <div class="stat-lbl">Tarif Per Hari</div>
+          <div class="stat-val">Rp 30.000</div>
+          <div class="stat-subtext">Standar Harian</div>
+        </div>
+      </div>
+
+      <!-- KALENDER INTERAKTIF -->
+      <div class="glass-card">
+        <div class="calendar-nav-bar">
+          <button class="btn-nav-cal" onclick="shiftMealMonth(-1)"><i class="fa-solid fa-chevron-left"></i> Bulan Sebelumnya</button>
+          
+          <div style="display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-calendar-check" style="color:var(--accent);"></i>
+            <select id="selectMealMonth" onchange="onMealMonthDropdownChange()" style="margin-bottom:0; width:auto; font-weight:700;">
+              <!-- Dynamic Options -->
+            </select>
+          </div>
+
+          <button class="btn-nav-cal" onclick="shiftMealMonth(1)">Bulan Selanjutnya <i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+
+        <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 12px; text-align: center;">
+          💡 <b>Klik pada kotak tanggal</b> untuk mengubah status (Makan / Tidak Makan).
+        </p>
+
+        <!-- GRID KALENDER -->
+        <div class="calendar-grid" id="mealCalendarGrid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4: REKAP BULAN LALU / LAINNYA -->
     <div id="sec-history" style="display:none;">
       <div class="glass-card">
         <h3 style="margin-bottom: 16px; font-size: 16px;"><i class="fa-solid fa-filter" style="color: var(--accent-cyan);"></i> Pilih Bulan Rekap</h3>
@@ -487,7 +633,7 @@
       </div>
     </div>
 
-    <!-- SECTION 4: SETTINGS & FIREBASE -->
+    <!-- SECTION 5: SETTINGS & FIREBASE -->
     <div id="sec-settings" class="glass-card" style="display:none;">
       <h3 style="margin-bottom: 16px; font-size: 16px;"><i class="fa-solid fa-sliders"></i> Pengaturan Aplikasi</h3>
       
@@ -509,12 +655,16 @@
 
   <script>
     const DEFAULT_PASS = "maubuka";
+    const MEAL_RATE_PER_DAY = 30000;
     let firebaseDbUrl = localStorage.getItem('hida_tracker_firebase_url') || "";
     
     // Application State
     let trackerData = {
-      transactions: [] // Array of { id, date, name, qty, price, total, notes, monthKey }
+      transactions: [], // Array of { id, date, name, qty, price, total, notes, monthKey }
+      mealLogs: {}      // Object of { "YYYY-MM-DD": true/false }
     };
+
+    let selectedMealMonth = getCurrentMonthKey(); // e.g., "2026-09"
 
     // Initialize Date picker with Today's Date YYYY-MM-DD
     function setTodayDateInput() {
@@ -571,8 +721,10 @@
         try {
           const res = await fetch(`${firebaseDbUrl.replace(/\/$/, '')}/hida_tracker.json`);
           const data = await res.json();
-          if (data && data.transactions) {
+          if (data) {
             trackerData = data;
+            if (!trackerData.transactions) trackerData.transactions = [];
+            if (!trackerData.mealLogs) trackerData.mealLogs = {};
           }
         } catch(e) {
           console.error("Firebase fetch error, loading local", e);
@@ -588,6 +740,7 @@
       if (local) {
         trackerData = JSON.parse(local);
         if (!trackerData.transactions) trackerData.transactions = [];
+        if (!trackerData.mealLogs) trackerData.mealLogs = {};
       }
     }
 
@@ -608,14 +761,15 @@
 
     // Switch Tabs
     function switchTab(tab) {
-      ['dashboard', 'input', 'history', 'settings'].forEach(t => {
+      ['dashboard', 'input', 'meal', 'history', 'settings'].forEach(t => {
         document.getElementById(`sec-${t}`).style.display = t === tab ? 'block' : 'none';
       });
       document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
-        btn.classList.toggle('active', ['dashboard', 'input', 'history', 'settings', 'lock'][idx] === tab);
+        btn.classList.toggle('active', ['dashboard', 'input', 'meal', 'history', 'settings', 'lock'][idx] === tab);
       });
 
       if (tab === 'history') populateMonthDropdown();
+      if (tab === 'meal') populateMealMonthDropdown();
       renderAllViews();
     }
 
@@ -690,6 +844,7 @@
     function renderAllViews() {
       renderDashboard();
       renderCurrentMonthTable();
+      renderMealTracker();
       renderHistoryMonth();
     }
 
@@ -784,7 +939,128 @@
       });
     }
 
-    // 3. REKAP BULAN LAINNYA & DROPDOWN
+    // 3. PENCATATAN MAKAN (MEAL TRACKER LOGIC & CALENDAR)
+    function populateMealMonthDropdown() {
+      const select = document.getElementById('selectMealMonth');
+      select.innerHTML = '';
+
+      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      
+      const setMonths = new Set();
+      setMonths.add(getCurrentMonthKey());
+
+      // Add all months present in mealLogs
+      if (trackerData.mealLogs) {
+        Object.keys(trackerData.mealLogs).forEach(dateStr => {
+          if (dateStr.length >= 7) setMonths.add(dateStr.substring(0, 7));
+        });
+      }
+
+      const sorted = Array.from(setMonths).sort().reverse();
+
+      sorted.forEach(mKey => {
+        const [yyyy, mm] = mKey.split('-');
+        const option = document.createElement('option');
+        option.value = mKey;
+        option.innerText = `${monthNames[parseInt(mm)-1]} ${yyyy}`;
+        if (mKey === selectedMealMonth) option.selected = true;
+        select.appendChild(option);
+      });
+    }
+
+    function onMealMonthDropdownChange() {
+      selectedMealMonth = document.getElementById('selectMealMonth').value;
+      renderMealTracker();
+    }
+
+    function shiftMealMonth(delta) {
+      const [yyyyStr, mmStr] = selectedMealMonth.split('-');
+      let yyyy = parseInt(yyyyStr);
+      let mm = parseInt(mmStr) + delta;
+
+      if (mm > 12) {
+        mm = 1;
+        yyyy++;
+      } else if (mm < 1) {
+        mm = 12;
+        yyyy--;
+      }
+
+      selectedMealMonth = `${yyyy}-${String(mm).padStart(2, '0')}`;
+      populateMealMonthDropdown();
+      renderMealTracker();
+    }
+
+    async function toggleMealDate(dateKey) {
+      if (!trackerData.mealLogs) trackerData.mealLogs = {};
+      
+      const currentStatus = !!trackerData.mealLogs[dateKey];
+      trackerData.mealLogs[dateKey] = !currentStatus;
+      
+      await saveData();
+      renderMealTracker();
+    }
+
+    function renderMealTracker() {
+      const grid = document.getElementById('mealCalendarGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      const [yyyyStr, mmStr] = selectedMealMonth.split('-');
+      const yyyy = parseInt(yyyyStr);
+      const mm = parseInt(mmStr);
+      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+      document.getElementById('mealMonthLbl').innerText = `Bulan: ${monthNames[mm-1]} ${yyyy}`;
+
+      // Day Names Header (Minggu to Sabtu)
+      const dayHeaders = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+      dayHeaders.forEach(dh => {
+        const hDiv = document.createElement('div');
+        hDiv.className = 'cal-header-cell';
+        hDiv.innerText = dh;
+        grid.appendChild(hDiv);
+      });
+
+      // Calculate Days in Month & First Day Index
+      const daysInMonth = new Date(yyyy, mm, 0).getDate();
+      const firstDayIdx = new Date(yyyy, mm - 1, 1).getDay(); // 0 = Sun, 1 = Mon ...
+
+      // Empty padding cells before Day 1
+      for (let i = 0; i < firstDayIdx; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'cal-day-cell empty';
+        grid.appendChild(emptyCell);
+      }
+
+      let activeDaysCount = 0;
+
+      // Populate Day Cells
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayStr = String(day).padStart(2, '0');
+        const dateKey = `${yyyyStr}-${mmStr}-${dayStr}`;
+        const isActive = !!(trackerData.mealLogs && trackerData.mealLogs[dateKey]);
+
+        if (isActive) activeDaysCount++;
+
+        const cell = document.createElement('div');
+        cell.className = `cal-day-cell ${isActive ? 'active' : ''}`;
+        cell.onclick = () => toggleMealDate(dateKey);
+
+        cell.innerHTML = `
+          <div class="cal-day-number">${day}</div>
+          <div class="cal-day-status">${isActive ? '<i class="fa-solid fa-check"></i> Makan' : '-'}</div>
+        `;
+        grid.appendChild(cell);
+      }
+
+      // Update Summary Stat Cards
+      const totalCost = activeDaysCount * MEAL_RATE_PER_DAY;
+      document.getElementById('mealDaysCountVal').innerText = `${activeDaysCount} Hari`;
+      document.getElementById('mealTotalCostVal').innerText = formatRupiah(totalCost);
+    }
+
+    // 4. REKAP BULAN LAINNYA & DROPDOWN
     function populateMonthDropdown() {
       const select = document.getElementById('selectMonthFilter');
       select.innerHTML = '';
@@ -808,7 +1084,10 @@
     }
 
     function renderHistoryMonth() {
-      const selectedMonth = document.getElementById('selectMonthFilter').value || getCurrentMonthKey();
+      const selectElem = document.getElementById('selectMonthFilter');
+      if (!selectElem) return;
+      
+      const selectedMonth = selectElem.value || getCurrentMonthKey();
       const monthTransactions = trackerData.transactions.filter(t => t.monthKey === selectedMonth);
 
       const [yyyy, mm] = selectedMonth.split('-');
