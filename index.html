@@ -450,6 +450,7 @@
       <button class="tab-btn active" onclick="switchTab('dashboard')"><i class="fa-solid fa-house"></i> Dashboard</button>
       <button class="tab-btn" onclick="switchTab('input')"><i class="fa-solid fa-pen-to-square"></i> Input Transaksi</button>
       <button class="tab-btn" onclick="switchTab('meal')"><i class="fa-solid fa-utensils"></i> Catatan Makan</button>
+      <button class="tab-btn" onclick="switchTab('overtime')"><i class="fa-solid fa-business-time"></i> Input Lembur</button>
       <button class="tab-btn" onclick="switchTab('history')"><i class="fa-solid fa-calendar-days"></i> Rekap Bulan Lain</button>
       <button class="tab-btn" onclick="switchTab('settings')"><i class="fa-solid fa-sliders"></i> Pengaturan</button>
       <button class="tab-btn" onclick="lockApp()"><i class="fa-solid fa-lock"></i> Kunci</button>
@@ -625,7 +626,122 @@
       </div>
     </div>
 
-    <!-- SECTION 4: REKAP BULAN LALU / LAINNYA -->
+    <!-- SECTION 4: INPUT & REKAP LEMBUR (OVERTIME TRACKER) -->
+    <div id="sec-overtime" style="display:none;">
+      <!-- STAT CARD LEMBUR -->
+      <div class="stat-grid">
+        <div class="stat-card accent">
+          <div class="stat-lbl">Total Pendapatan Lembur</div>
+          <div class="stat-val" id="otTotalIncomeVal">Rp 0</div>
+          <div class="stat-subtext" id="otMonthLbl">Bulan Berjalan</div>
+        </div>
+
+        <div class="stat-card cyan">
+          <div class="stat-lbl">Total Jam Lembur</div>
+          <div class="stat-val" id="otTotalHoursVal">0 Jam</div>
+          <div class="stat-subtext">Akumulasi Lembur</div>
+        </div>
+
+        <div class="stat-card amber">
+          <div class="stat-lbl">Total Extra Fooding</div>
+          <div class="stat-val" id="otTotalFoodingVal">Rp 0</div>
+          <div class="stat-subtext" id="otFoodingCountVal">0 Hari Dapat Fooding</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-lbl">Total Hari Lembur</div>
+          <div class="stat-val" id="otTotalDaysVal">0 Hari</div>
+          <div class="stat-subtext">Bulan Berjalan</div>
+        </div>
+      </div>
+
+      <!-- FORM INPUT LEMBUR -->
+      <div class="glass-card">
+        <h3 style="margin-bottom: 14px; font-size: 15px;">
+          <i class="fa-solid fa-user-clock" style="color: var(--accent);"></i> Form Input Lembur
+        </h3>
+        
+        <div class="form-grid">
+          <div>
+            <label>Tanggal Lembur</label>
+            <input type="date" id="otDate">
+          </div>
+          <div>
+            <label>Tipe Hari</label>
+            <select id="otDayType" onchange="calcOvertimePreview()">
+              <option value="kerja">Hari Kerja</option>
+              <option value="libur">Hari Libur</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div>
+            <label>Durasi Lembur (Jam)</label>
+            <input type="number" id="otHours" placeholder="Misal: 2 atau 4" min="0.5" step="0.5" value="2" oninput="calcOvertimePreview()">
+          </div>
+          <div>
+            <label>Catatan (Opsional)</label>
+            <input type="text" id="otNotes" placeholder="Misal: Inspection QC / Maintenance Fleet">
+          </div>
+        </div>
+
+        <!-- PREVIEW RINCIAN PEMBAYARAN -->
+        <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 12px; margin-bottom: 14px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; margin-bottom: 8px;">Estimasi Pendapatan Lembur:</div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
+            <span>Premi Lembur:</span>
+            <strong id="otPremiPreview" style="color: #38bdf8;">Rp 60.000</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+            <span>Extra Fooding (≥ 4 Jam):</span>
+            <strong id="otFoodingPreview" style="color: #f59e0b;">Rp 0</strong>
+          </div>
+          <div style="border-top: 1px dashed var(--glass-border); margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; font-size: 14px; font-weight: 800;">
+            <span>Total Pendapatan:</span>
+            <span id="otTotalPreview" style="color: var(--accent);">Rp 60.000</span>
+          </div>
+        </div>
+
+        <button class="btn-submit" onclick="submitOvertime()"><i class="fa-solid fa-floppy-disk"></i> Simpan Data Lembur</button>
+      </div>
+
+      <!-- TABEL REKAP LEMBUR BULAN BERJALAN -->
+      <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <h3 style="font-size: 15px;" id="otMonthTableTitle">
+            <i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Rekap Lembur Bulan Berjalan
+          </h3>
+          <div class="calendar-month-select-wrapper" style="width: auto;">
+            <select id="selectOtMonth" onchange="onOtMonthDropdownChange()" style="margin-bottom:0; max-width:160px; padding:6px 8px;">
+              <!-- Dynamic Options -->
+            </select>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Tipe Hari</th>
+                <th>Durasi</th>
+                <th>Premi</th>
+                <th>Extra Fooding</th>
+                <th>Total (Rp)</th>
+                <th>Catatan</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="otTableBody">
+              <!-- JS Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 5: REKAP BULAN LALU / LAINNYA -->
     <div id="sec-history" style="display:none;">
       <div class="glass-card">
         <h3 style="margin-bottom: 14px; font-size: 15px;"><i class="fa-solid fa-filter" style="color: var(--accent-cyan);"></i> Pilih Bulan Rekap</h3>
@@ -662,7 +778,7 @@
       </div>
     </div>
 
-    <!-- SECTION 5: SETTINGS & FIREBASE -->
+    <!-- SECTION 6: SETTINGS & FIREBASE -->
     <div id="sec-settings" class="glass-card" style="display:none;">
       <h3 style="margin-bottom: 14px; font-size: 15px;"><i class="fa-solid fa-sliders"></i> Pengaturan Aplikasi</h3>
       
@@ -691,10 +807,12 @@
     // Application State
     let trackerData = {
       transactions: [], // Array of { id, date, name, qty, price, total, notes, monthKey }
-      mealLogs: {}      // Object of { "YYYY-MM-DD": true/false }
+      mealLogs: {},     // Object of { "YYYY-MM-DD": true/false }
+      overtimeLogs: []  // Array of { id, date, dayType, hours, premi, fooding, total, notes, monthKey }
     };
 
     let selectedMealMonth = getCurrentMonthKey();
+    let selectedOtMonth = getCurrentMonthKey();
 
     // Initialize Date picker with Today's Date YYYY-MM-DD
     function setTodayDateInput() {
@@ -702,7 +820,12 @@
       const yyyy = today.getFullYear();
       const mm = String(today.getMonth() + 1).padStart(2, '0');
       const dd = String(today.getDate()).padStart(2, '0');
-      document.getElementById('inputDate').value = `${yyyy}-${mm}-${dd}`;
+      const dateStr = `${yyyy}-${mm}-${dd}`;
+      
+      document.getElementById('inputDate').value = dateStr;
+      if (document.getElementById('otDate')) {
+        document.getElementById('otDate').value = dateStr;
+      }
     }
 
     // Realtime Clock WITA (UTC+8)
@@ -740,6 +863,7 @@
       setTodayDateInput();
       document.getElementById('firebaseUrlInput').value = firebaseDbUrl;
       await loadData();
+      calcOvertimePreview();
       renderAllViews();
     }
 
@@ -764,6 +888,7 @@
             trackerData = data;
             if (!trackerData.transactions) trackerData.transactions = [];
             if (!trackerData.mealLogs) trackerData.mealLogs = {};
+            if (!trackerData.overtimeLogs) trackerData.overtimeLogs = [];
             localStorage.setItem('hida_tracker_data', newStr);
             renderAllViews();
           }
@@ -780,6 +905,7 @@
         trackerData = JSON.parse(local);
         if (!trackerData.transactions) trackerData.transactions = [];
         if (!trackerData.mealLogs) trackerData.mealLogs = {};
+        if (!trackerData.overtimeLogs) trackerData.overtimeLogs = [];
       }
     }
 
@@ -800,19 +926,25 @@
 
     // Switch Tabs
     function switchTab(tab) {
-      ['dashboard', 'input', 'meal', 'history', 'settings'].forEach(t => {
-        document.getElementById(`sec-${t}`).style.display = t === tab ? 'block' : 'none';
+      const tabKeys = ['dashboard', 'input', 'meal', 'overtime', 'history', 'settings'];
+      tabKeys.forEach(t => {
+        const el = document.getElementById(`sec-${t}`);
+        if (el) el.style.display = t === tab ? 'block' : 'none';
       });
+
       document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
-        btn.classList.toggle('active', ['dashboard', 'input', 'meal', 'history', 'settings', 'lock'][idx] === tab);
+        if (idx < tabKeys.length) {
+          btn.classList.toggle('active', tabKeys[idx] === tab);
+        }
       });
 
       if (tab === 'history') populateMonthDropdown();
       if (tab === 'meal') populateMealMonthDropdown();
+      if (tab === 'overtime') populateOvertimeMonthDropdown();
       renderAllViews();
     }
 
-    // Calculate Subtotal Preview in Form
+    // Calculate Subtotal Preview in Form Transaksi
     function calcSubtotal() {
       const qty = parseFloat(document.getElementById('inputQty').value) || 0;
       const price = parseFloat(document.getElementById('inputPrice').value) || 0;
@@ -884,6 +1016,7 @@
       renderDashboard();
       renderCurrentMonthTable();
       renderMealTracker();
+      renderOvertimeTracker();
       renderHistoryMonth();
     }
 
@@ -981,6 +1114,7 @@
     // 3. PENCATATAN MAKAN (MEAL TRACKER LOGIC & CALENDAR)
     function populateMealMonthDropdown() {
       const select = document.getElementById('selectMealMonth');
+      if (!select) return;
       select.innerHTML = '';
 
       const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -1049,7 +1183,9 @@
       const mm = parseInt(mmStr);
       const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
-      document.getElementById('mealMonthLbl').innerText = `Bulan: ${monthNames[mm-1]} ${yyyy}`;
+      if (document.getElementById('mealMonthLbl')) {
+        document.getElementById('mealMonthLbl').innerText = `Bulan: ${monthNames[mm-1]} ${yyyy}`;
+      }
 
       const dayHeaders = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
       dayHeaders.forEach(dh => {
@@ -1089,13 +1225,218 @@
       }
 
       const totalCost = activeDaysCount * MEAL_RATE_PER_DAY;
-      document.getElementById('mealDaysCountVal').innerText = `${activeDaysCount} Hari`;
-      document.getElementById('mealTotalCostVal').innerText = formatRupiah(totalCost);
+      if (document.getElementById('mealDaysCountVal')) {
+        document.getElementById('mealDaysCountVal').innerText = `${activeDaysCount} Hari`;
+      }
+      if (document.getElementById('mealTotalCostVal')) {
+        document.getElementById('mealTotalCostVal').innerText = formatRupiah(totalCost);
+      }
     }
 
-    // 4. REKAP BULAN LAINNYA & DROPDOWN
+    // 4. OVERTIME TRACKER LOGIC & CALCULATOR
+    function calculateOvertime(dayType, hours) {
+      hours = parseFloat(hours) || 0;
+      let premi = 0;
+      let fooding = 0;
+
+      if (dayType === 'kerja') {
+        if (hours >= 4) {
+          premi = 70000;
+        } else if (hours >= 2) {
+          premi = 60000;
+        } else {
+          premi = Math.round(hours * 30000);
+        }
+      } else if (dayType === 'libur') {
+        if (hours >= 7) {
+          premi = 200000;
+        } else {
+          premi = Math.round(hours * 28571);
+        }
+      }
+
+      // Extra Fooding: Lembur minimal 4 jam
+      if (hours >= 4) {
+        fooding = 20000;
+      } else {
+        fooding = 0;
+      }
+
+      return { premi, fooding, total: premi + fooding };
+    }
+
+    function calcOvertimePreview() {
+      const otDayTypeEl = document.getElementById('otDayType');
+      const otHoursEl = document.getElementById('otHours');
+      if (!otDayTypeEl || !otHoursEl) return;
+
+      const dayType = otDayTypeEl.value;
+      const hours = parseFloat(otHoursEl.value) || 0;
+
+      const calc = calculateOvertime(dayType, hours);
+
+      document.getElementById('otPremiPreview').innerText = formatRupiah(calc.premi);
+      document.getElementById('otFoodingPreview').innerText = formatRupiah(calc.fooding);
+      document.getElementById('otTotalPreview').innerText = formatRupiah(calc.total);
+    }
+
+    async function submitOvertime() {
+      const dateVal = document.getElementById('otDate').value;
+      const dayType = document.getElementById('otDayType').value;
+      const hours = parseFloat(document.getElementById('otHours').value) || 0;
+      const notes = document.getElementById('otNotes').value.trim();
+
+      if (!dateVal || hours <= 0) {
+        showToast("⚠️ Mohon isi tanggal dan durasi lembur yang valid!");
+        return;
+      }
+
+      const calc = calculateOvertime(dayType, hours);
+      const monthKey = dateVal.substring(0, 7);
+
+      const newOt = {
+        id: Date.now(),
+        date: dateVal,
+        dayType,
+        hours,
+        premi: calc.premi,
+        fooding: calc.fooding,
+        total: calc.total,
+        notes,
+        monthKey
+      };
+
+      if (!trackerData.overtimeLogs) trackerData.overtimeLogs = [];
+      trackerData.overtimeLogs.unshift(newOt);
+      await saveData();
+
+      document.getElementById('otNotes').value = '';
+      calcOvertimePreview();
+
+      showToast("✅ Data lembur berhasil disimpan!");
+      renderAllViews();
+    }
+
+    async function deleteOvertime(id) {
+      if (confirm("Hapus catatan lembur ini?")) {
+        trackerData.overtimeLogs = trackerData.overtimeLogs.filter(item => item.id !== id);
+        await saveData();
+        showToast("🗑️ Catatan lembur dihapus");
+        renderAllViews();
+      }
+    }
+
+    function populateOvertimeMonthDropdown() {
+      const select = document.getElementById('selectOtMonth');
+      if (!select) return;
+      select.innerHTML = '';
+
+      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      
+      const setMonths = new Set();
+      setMonths.add(getCurrentMonthKey());
+
+      if (trackerData.overtimeLogs) {
+        trackerData.overtimeLogs.forEach(item => {
+          if (item.monthKey) setMonths.add(item.monthKey);
+        });
+      }
+
+      const sorted = Array.from(setMonths).sort().reverse();
+
+      sorted.forEach(mKey => {
+        const [yyyy, mm] = mKey.split('-');
+        const option = document.createElement('option');
+        option.value = mKey;
+        option.innerText = `${monthNames[parseInt(mm)-1]} ${yyyy}`;
+        if (mKey === selectedOtMonth) option.selected = true;
+        select.appendChild(option);
+      });
+    }
+
+    function onOtMonthDropdownChange() {
+      selectedOtMonth = document.getElementById('selectOtMonth').value;
+      renderOvertimeTracker();
+    }
+
+    function renderOvertimeTracker() {
+      const tbody = document.getElementById('otTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (!trackerData.overtimeLogs) trackerData.overtimeLogs = [];
+
+      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      const [yyyy, mm] = selectedOtMonth.split('-');
+      
+      if (document.getElementById('otMonthLbl')) {
+        document.getElementById('otMonthLbl').innerText = `Bulan: ${monthNames[parseInt(mm)-1]} ${yyyy}`;
+      }
+      if (document.getElementById('otMonthTableTitle')) {
+        document.getElementById('otMonthTableTitle').innerHTML = `<i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Rekap Lembur (${monthNames[parseInt(mm)-1]} ${yyyy})`;
+      }
+
+      const filteredLogs = trackerData.overtimeLogs.filter(item => item.monthKey === selectedOtMonth);
+
+      let totalIncome = 0;
+      let totalHours = 0;
+      let totalFooding = 0;
+      let foodingDays = 0;
+
+      filteredLogs.forEach(item => {
+        totalIncome += item.total || 0;
+        totalHours += item.hours || 0;
+        totalFooding += item.fooding || 0;
+        if (item.fooding > 0) foodingDays++;
+      });
+
+      if (document.getElementById('otTotalIncomeVal')) {
+        document.getElementById('otTotalIncomeVal').innerText = formatRupiah(totalIncome);
+      }
+      if (document.getElementById('otTotalHoursVal')) {
+        document.getElementById('otTotalHoursVal').innerText = `${totalHours} Jam`;
+      }
+      if (document.getElementById('otTotalFoodingVal')) {
+        document.getElementById('otTotalFoodingVal').innerText = formatRupiah(totalFooding);
+      }
+      if (document.getElementById('otFoodingCountVal')) {
+        document.getElementById('otFoodingCountVal').innerText = `${foodingDays} Hari Dapat Fooding`;
+      }
+      if (document.getElementById('otTotalDaysVal')) {
+        document.getElementById('otTotalDaysVal').innerText = `${filteredLogs.length} Hari`;
+      }
+
+      if (filteredLogs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: var(--text-sub); padding:20px;">Belum ada data lembur untuk bulan ini.</td></tr>`;
+        return;
+      }
+
+      filteredLogs.forEach(item => {
+        const tr = document.createElement('tr');
+        const typeBadge = item.dayType === 'kerja' 
+          ? `<span style="background: rgba(99, 102, 241, 0.2); color: #818cf8; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 10px;">Hari Kerja</span>`
+          : `<span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 10px;">Hari Libur</span>`;
+
+        tr.innerHTML = `
+          <td>${formatDateDisplay(item.date)}</td>
+          <td>${typeBadge}</td>
+          <td><span class="badge-qty">${item.hours} Jam</span></td>
+          <td>${formatRupiah(item.premi)}</td>
+          <td>${item.fooding > 0 ? `<span style="color:#f59e0b; font-weight:700;">${formatRupiah(item.fooding)}</span>` : '<span style="color:var(--text-sub);">-</span>'}</td>
+          <td class="price-tag">${formatRupiah(item.total)}</td>
+          <td style="font-size: 12px; color: var(--text-sub);">${escapeHtml(item.notes || '-')}</td>
+          <td>
+            <button class="btn-action-sm btn-del-sm" onclick="deleteOvertime(${item.id})"><i class="fa-solid fa-trash"></i> Hapus</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 5. REKAP BULAN LAINNYA & DROPDOWN
     function populateMonthDropdown() {
       const select = document.getElementById('selectMonthFilter');
+      if (!select) return;
       select.innerHTML = '';
 
       const monthsSet = new Set(trackerData.transactions.map(t => t.monthKey));
