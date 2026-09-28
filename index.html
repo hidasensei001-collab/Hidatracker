@@ -782,7 +782,7 @@
       <h3 style="margin-bottom: 14px; font-size: 15px;"><i class="fa-solid fa-sliders"></i> Pengaturan Aplikasi</h3>
       
       <label>URL Firebase Realtime Database (Global Default Active)</label>
-      <input type="text" id="firebaseUrlInput" placeholder="https://database-kamu-default-rtdb.firebaseio.com/">
+      <input type="text" id="firebaseUrlInput" placeholder="https://hidatracker-default-rtdb.firebaseio.com/">
       <button class="btn-submit" onclick="saveFirebaseUrl()" style="margin-bottom: 16px;">Simpan Database URL Custom</button>
 
       <label>Ubah Password Akses</label>
@@ -800,7 +800,7 @@
   <script>
     const DEFAULT_PASS = "maubuka";
     const MEAL_RATE_PER_DAY = 30000;
-    const DEFAULT_FIREBASE_URL = "https://master-prompt-db-default-rtdb.firebaseio.com/";
+    const DEFAULT_FIREBASE_URL = "https://hidatracker-default-rtdb.firebaseio.com/";
     let firebaseDbUrl = localStorage.getItem('hida_tracker_firebase_url') || DEFAULT_FIREBASE_URL;
     
     // Application State
